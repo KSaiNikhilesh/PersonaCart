@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { auth } from '../firebase';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -16,16 +17,18 @@ const Cart = ({ authToken }) => {
     setLoading(true);
     setError(null);
     try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('User not authenticated');
+      const token = await user.getIdToken();
       const res = await fetch(`${API_URL}/cart`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch cart');
       const cart = await res.json();
       setCartItems(cart);
       if (cart.length > 0) {
-        // Fetch all products
         const prodRes = await fetch(`${API_URL}/products`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!prodRes.ok) throw new Error('Failed to fetch products');
         const allProducts = await prodRes.json();
@@ -42,9 +45,12 @@ const Cart = ({ authToken }) => {
 
   const handleRemove = async (cartId) => {
     try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('User not authenticated');
+      const token = await user.getIdToken();
       await fetch(`${API_URL}/cart/${cartId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${authToken}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       fetchCart();
     } catch (err) {
