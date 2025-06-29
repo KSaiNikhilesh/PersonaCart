@@ -89,9 +89,13 @@ npm start
 ```
 family-profiles/
   ├── public/           # Static assets
-  ├── src/              # React frontend
   ├── server/           # Node.js + Express backend
-  └──package.json      # Frontend dependencies
+  ├── src/              # React frontend
+  ├── .gitignore        # Git ignore rules
+  ├── package.json      # Frontend dependencies
+  ├── package-lock.json # Frontend lockfile
+  ├── postcss.config.js # PostCSS config
+  └── tailwind.config.js# Tailwind CSS config
 ```
 
 ## Contribution
