@@ -209,10 +209,13 @@ app.get('/products', authenticateToken, async (req, res) => {
 // Get all cart items for the user
 app.get('/cart', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
+  console.log('Fetching cart for user:', userId);
   try {
     const { rows } = await pool.query('SELECT * FROM cart WHERE userId = $1', [userId]);
+    console.log('Cart rows:', rows);
     res.json(rows);
   } catch (err) {
+    console.error('DB error:', err);
     res.status(500).json({ message: 'DB error' });
   }
 });
