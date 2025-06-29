@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const ProductListing = ({ authToken }) => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -30,7 +32,7 @@ const ProductListing = ({ authToken }) => {
 
   const fetchProfiles = async () => {
     try {
-      const response = await fetch('http://localhost:4000/profiles', {
+      const response = await fetch(`${API_URL}/profiles`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -48,7 +50,7 @@ const ProductListing = ({ authToken }) => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:4000/products', {
+      const response = await fetch(`${API_URL}/products`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -122,7 +124,7 @@ const ProductListing = ({ authToken }) => {
 
   const handleAddToCart = async (productId) => {
     try {
-      const res = await fetch('http://localhost:4000/cart', {
+      const res = await fetch(`${API_URL}/cart`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,

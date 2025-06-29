@@ -8,6 +8,8 @@ const ageGroups = [
   { label: 'Senior (60+)', value: 'Senior' },
 ];
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const ProfileCreation = ({ authToken }) => {
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState([]);
@@ -34,7 +36,7 @@ const ProfileCreation = ({ authToken }) => {
 
   const fetchProfiles = async () => {
     try {
-      const response = await fetch('http://localhost:4000/profiles', {
+      const response = await fetch(`${API_URL}/profiles`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
@@ -83,8 +85,8 @@ const ProfileCreation = ({ authToken }) => {
 
     try {
       const url = editingProfile 
-        ? `http://localhost:4000/profiles/${editingProfile.id}`
-        : 'http://localhost:4000/profiles';
+        ? `${API_URL}/profiles/${editingProfile.id}`
+        : `${API_URL}/profiles`;
       
       const method = editingProfile ? 'PUT' : 'POST';
       
@@ -129,7 +131,7 @@ const ProfileCreation = ({ authToken }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:4000/profiles/${profileId}`, {
+      const response = await fetch(`${API_URL}/profiles/${profileId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authToken}`,

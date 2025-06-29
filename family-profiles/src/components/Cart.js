@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const Cart = ({ authToken }) => {
   const [cartItems, setCartItems] = useState([]);
   const [products, setProducts] = useState([]);
@@ -14,7 +16,7 @@ const Cart = ({ authToken }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('http://localhost:4000/cart', {
+      const res = await fetch(`${API_URL}/cart`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
       if (!res.ok) throw new Error('Failed to fetch cart');
@@ -22,7 +24,7 @@ const Cart = ({ authToken }) => {
       setCartItems(cart);
       if (cart.length > 0) {
         // Fetch all products
-        const prodRes = await fetch('http://localhost:4000/products', {
+        const prodRes = await fetch(`${API_URL}/products`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
         });
         if (!prodRes.ok) throw new Error('Failed to fetch products');
@@ -40,7 +42,7 @@ const Cart = ({ authToken }) => {
 
   const handleRemove = async (cartId) => {
     try {
-      await fetch(`http://localhost:4000/cart/${cartId}`, {
+      await fetch(`${API_URL}/cart/${cartId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
