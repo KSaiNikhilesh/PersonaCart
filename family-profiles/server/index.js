@@ -209,11 +209,18 @@ app.get('/products', authenticateToken, async (req, res) => {
 // Get all cart items for the user
 app.get('/cart', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
-  console.log('Fetching cart for user:', userId);
+  // console.log('Fetching cart for user:', userId);
   try {
     const { rows } = await pool.query('SELECT * FROM cart WHERE userId = $1', [userId]);
-    console.log('Cart rows:', rows);
-    res.json(rows);
+    // console.log('Cart rows:', rows);
+    // Map keys to camelCase for frontend compatibility
+    const mappedRows = rows.map(row => ({
+      id: row.id,
+      userId: row.userid,
+      productId: row.productid,
+      quantity: row.quantity
+    }));
+    res.json(mappedRows);
   } catch (err) {
     console.error('DB error:', err);
     res.status(500).json({ message: 'DB error' });
