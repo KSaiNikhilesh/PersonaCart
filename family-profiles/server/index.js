@@ -1,9 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
 const admin = require('firebase-admin');
 const dotenv = require('dotenv');
+const { Pool } = require('pg');
 
 dotenv.config();
 
@@ -32,7 +31,10 @@ admin.initializeApp({
 app.use(cors());
 app.use(express.json());
 
-const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'));
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 // Middleware to verify Firebase token
 const authenticateToken = async (req, res, next) => {
@@ -52,225 +54,211 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// Create tables and seed sample data if empty
-function initializeDatabase() {
-  db.serialize(() => {
-    // Create profiles table (no seeding - users create their own profiles)
-    db.run(`CREATE TABLE IF NOT EXISTS profiles (
-      id TEXT PRIMARY KEY,
-      userId TEXT,
-      name TEXT,
-      ageGroup TEXT,
-      gender TEXT,
-      avatar TEXT,
-      preferences TEXT
-    )`);
-    
-    // Create products table with sample data
-    db.run(`CREATE TABLE IF NOT EXISTS products (
-      id TEXT PRIMARY KEY,
-      name TEXT,
-      category TEXT,
-      price REAL,
-      sizes TEXT,
-      gender TEXT,
-      brand TEXT
-    )`);
-    
-    // Create cart table (user-specific)
-    db.run(`CREATE TABLE IF NOT EXISTS cart (
-      id TEXT PRIMARY KEY,
-      userId TEXT,
-      productId TEXT,
-      quantity INTEGER
-    )`);
-    
-    // Seed only products (no profiles or users)
-    db.get('SELECT COUNT(*) as count FROM products', (err, row) => {
-      if (row.count === 0) {
-        const productData = [
-          ['p1', "Men's Cotton T-Shirt", 'clothing', 24.99, JSON.stringify(['S','M','L','XL']), 'Male', 'Generic Brand'],
-          ['p2', "Women's Blouse", 'clothing', 39.99, JSON.stringify(['XS','S','M','L']), 'Female', 'Fashion Brand'],
-          ['p3', 'Kids Summer Dress', 'clothing', 19.99, JSON.stringify(['2T','3T','4T','5T']), 'Female', 'Kids Fashion'],
-          ['p4', "Men's Running Shoes", 'footwear', 79.99, JSON.stringify(['8','9','10','11','12']), 'Male', 'Sports Brand'],
-          ['p5', "Women's Sandals", 'footwear', 34.99, JSON.stringify(['6','7','8','9']), 'Female', 'Summer Style'],
-          ['p6', 'Kids Sneakers', 'footwear', 29.99, JSON.stringify(['1','2','3','4']), 'Unisex', 'Kids Comfort'],
-          ['p7', 'Dove Men+Care Body Wash', 'personal-care', 8.99, null, 'Male', 'Dove'],
-          ['p8', "Nivea Women's Body Lotion", 'personal-care', 12.99, null, 'Female', 'Nivea'],
-          ['p9', 'Johnson & Johnson Baby Shampoo', 'personal-care', 6.99, null, 'Unisex', 'Johnson & Johnson'],
-          ['p10', 'Head & Shoulders Anti-Dandruff', 'personal-care', 9.99, null, 'Unisex', 'Head & Shoulders'],
-          ['p11', 'Pantene Pro-V Shampoo', 'personal-care', 11.99, null, 'Female', 'Pantene'],
-          ['p12', 'Old Spice Deodorant', 'personal-care', 7.99, null, 'Male', 'Old Spice']
-        ];
-        for (const p of productData) {
-          db.run('INSERT INTO products (id, name, category, price, sizes, gender, brand) VALUES (?, ?, ?, ?, ?, ?, ?)', p);
-        }
-        console.log('Sample products seeded successfully');
-      }
-    });
-  });
+// --- Initialize Database Tables and Seed Data ---
+async function initializeDatabase() {
+  // Create tables
+  await pool.query(`CREATE TABLE IF NOT EXISTS profiles (
+    id TEXT PRIMARY KEY,
+    userId TEXT,
+    name TEXT,
+    ageGroup TEXT,
+    gender TEXT,
+    avatar TEXT,
+    preferences TEXT
+  )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS products (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    category TEXT,
+    price REAL,
+    sizes TEXT,
+    gender TEXT,
+    brand TEXT
+  )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS cart (
+    id TEXT PRIMARY KEY,
+    userId TEXT,
+    productId TEXT,
+    quantity INTEGER
+  )`);
+  // Seed products if empty
+  const { rows } = await pool.query('SELECT COUNT(*) as count FROM products');
+  if (parseInt(rows[0].count) === 0) {
+    const productData = [
+      ['p1', "Men's Cotton T-Shirt", 'clothing', 24.99, JSON.stringify(['S','M','L','XL']), 'Male', 'Generic Brand'],
+      ['p2', "Women's Blouse", 'clothing', 39.99, JSON.stringify(['XS','S','M','L']), 'Female', 'Fashion Brand'],
+      ['p3', 'Kids Summer Dress', 'clothing', 19.99, JSON.stringify(['2T','3T','4T','5T']), 'Female', 'Kids Fashion'],
+      ['p4', "Men's Running Shoes", 'footwear', 79.99, JSON.stringify(['8','9','10','11','12']), 'Male', 'Sports Brand'],
+      ['p5', "Women's Sandals", 'footwear', 34.99, JSON.stringify(['6','7','8','9']), 'Female', 'Summer Style'],
+      ['p6', 'Kids Sneakers', 'footwear', 29.99, JSON.stringify(['1','2','3','4']), 'Unisex', 'Kids Comfort'],
+      ['p7', 'Dove Men+Care Body Wash', 'personal-care', 8.99, null, 'Male', 'Dove'],
+      ['p8', "Nivea Women's Body Lotion", 'personal-care', 12.99, null, 'Female', 'Nivea'],
+      ['p9', 'Johnson & Johnson Baby Shampoo', 'personal-care', 6.99, null, 'Unisex', 'Johnson & Johnson'],
+      ['p10', 'Head & Shoulders Anti-Dandruff', 'personal-care', 9.99, null, 'Unisex', 'Head & Shoulders'],
+      ['p11', 'Pantene Pro-V Shampoo', 'personal-care', 11.99, null, 'Female', 'Pantene'],
+      ['p12', 'Old Spice Deodorant', 'personal-care', 7.99, null, 'Male', 'Old Spice']
+    ];
+    for (const p of productData) {
+      await pool.query('INSERT INTO products (id, name, category, price, sizes, gender, brand) VALUES ($1, $2, $3, $4, $5, $6, $7)', p);
+    }
+    console.log('Sample products seeded successfully');
+  }
 }
 
 initializeDatabase();
 
-// List all profiles for the user (user-specific data)
-app.get('/profiles', authenticateToken, (req, res) => {
-  const userId = req.user.uid; // Each user only sees their own profiles
-  db.all('SELECT * FROM profiles WHERE userId = ?', [userId], (err, rows) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    // Parse preferences JSON
+// List all profiles for the user
+app.get('/profiles', authenticateToken, async (req, res) => {
+  const userId = req.user.uid;
+  try {
+    const { rows } = await pool.query('SELECT * FROM profiles WHERE userId = $1', [userId]);
     rows.forEach(r => r.preferences = JSON.parse(r.preferences));
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
-// Get a single profile by ID (user-specific)
-app.get('/profiles/:id', authenticateToken, (req, res) => {
+// Get a single profile by ID
+app.get('/profiles/:id', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
-  db.get('SELECT * FROM profiles WHERE userId = ? AND id = ?', [userId, req.params.id], (err, row) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    if (!row) return res.status(404).json({ message: 'Profile not found' });
-    row.preferences = JSON.parse(row.preferences);
-    res.json(row);
-  });
+  try {
+    const { rows } = await pool.query('SELECT * FROM profiles WHERE userId = $1 AND id = $2', [userId, req.params.id]);
+    if (!rows[0]) return res.status(404).json({ message: 'Profile not found' });
+    rows[0].preferences = JSON.parse(rows[0].preferences);
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
-// Create a new profile (user-specific)
-app.post('/profiles', authenticateToken, (req, res) => {
+// Create a new profile
+app.post('/profiles', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
   const id = String(Date.now());
   const { name, ageGroup, gender, avatar, preferences } = req.body;
-  db.run('INSERT INTO profiles (id, userId, name, ageGroup, gender, avatar, preferences) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [id, userId, name, ageGroup, gender, avatar, JSON.stringify(preferences)],
-    function(err) {
-      if (err) return res.status(500).json({ message: 'DB error' });
-      db.get('SELECT * FROM profiles WHERE id = ?', [id], (err, row) => {
-        if (row) row.preferences = JSON.parse(row.preferences);
-        res.status(201).json(row);
-      });
-    });
+  try {
+    await pool.query('INSERT INTO profiles (id, userId, name, ageGroup, gender, avatar, preferences) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [id, userId, name, ageGroup, gender, avatar, JSON.stringify(preferences)]);
+    const { rows } = await pool.query('SELECT * FROM profiles WHERE id = $1', [id]);
+    if (rows[0]) rows[0].preferences = JSON.parse(rows[0].preferences);
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
-// Update a profile (user-specific)
-app.put('/profiles/:id', authenticateToken, (req, res) => {
+// Update a profile
+app.put('/profiles/:id', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
   const { name, ageGroup, gender, avatar, preferences } = req.body;
-  db.run('UPDATE profiles SET name = ?, ageGroup = ?, gender = ?, avatar = ?, preferences = ? WHERE userId = ? AND id = ?',
-    [name, ageGroup, gender, avatar, JSON.stringify(preferences), userId, req.params.id],
-    function(err) {
-      if (err) return res.status(500).json({ message: 'DB error' });
-      db.get('SELECT * FROM profiles WHERE id = ?', [req.params.id], (err, row) => {
-        if (row) row.preferences = JSON.parse(row.preferences);
-        res.json(row);
-      });
-    });
+  try {
+    await pool.query('UPDATE profiles SET name = $1, ageGroup = $2, gender = $3, avatar = $4, preferences = $5 WHERE userId = $6 AND id = $7',
+      [name, ageGroup, gender, avatar, JSON.stringify(preferences), userId, req.params.id]);
+    const { rows } = await pool.query('SELECT * FROM profiles WHERE id = $1', [req.params.id]);
+    if (rows[0]) rows[0].preferences = JSON.parse(rows[0].preferences);
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
-// Delete a profile (user-specific)
-app.delete('/profiles/:id', authenticateToken, (req, res) => {
+// Delete a profile
+app.delete('/profiles/:id', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
-  db.get('SELECT * FROM profiles WHERE userId = ? AND id = ?', [userId, req.params.id], (err, row) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    if (!row) return res.status(404).json({ message: 'Profile not found' });
-    db.run('DELETE FROM profiles WHERE userId = ? AND id = ?', [userId, req.params.id], function(err) {
-      if (err) return res.status(500).json({ message: 'DB error' });
-      row.preferences = JSON.parse(row.preferences);
-      res.json({ success: true, deleted: row });
-    });
-  });
+  try {
+    const { rows } = await pool.query('SELECT * FROM profiles WHERE userId = $1 AND id = $2', [userId, req.params.id]);
+    if (!rows[0]) return res.status(404).json({ message: 'Profile not found' });
+    await pool.query('DELETE FROM profiles WHERE userId = $1 AND id = $2', [userId, req.params.id]);
+    rows[0].preferences = JSON.parse(rows[0].preferences);
+    res.json({ success: true, deleted: rows[0] });
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
-// Get products personalized for a profile (user-specific profile access)
-app.get('/products', authenticateToken, (req, res) => {
+// Get products personalized for a profile
+app.get('/products', authenticateToken, async (req, res) => {
   const { profile_id } = req.query;
   const userId = req.user.uid;
-  
-  if (!profile_id) {
-    // If no profile_id, return all products
-    db.all('SELECT * FROM products', [], (err, products) => {
-      if (err) return res.status(500).json({ message: 'DB error' });
-      // Parse sizes for each product
-      products.forEach(p => { if (p.sizes) p.sizes = JSON.parse(p.sizes); });
-      res.json(products);
+  try {
+    if (!profile_id) {
+      const { rows } = await pool.query('SELECT * FROM products');
+      rows.forEach(p => { if (p.sizes) p.sizes = JSON.parse(p.sizes); });
+      return res.json(rows);
+    }
+    const { rows: profileRows } = await pool.query('SELECT * FROM profiles WHERE userId = $1 AND id = $2', [userId, profile_id]);
+    if (!profileRows[0]) return res.status(404).json({ message: 'Profile not found' });
+    const preferences = JSON.parse(profileRows[0].preferences);
+    const { rows: products } = await pool.query('SELECT * FROM products');
+    const filtered = products.filter(product => {
+      if (product.gender !== 'Unisex' && product.gender !== profileRows[0].gender) return false;
+      if (product.category === 'clothing' && preferences.shirtSize && product.sizes && !JSON.parse(product.sizes).includes(preferences.shirtSize)) return false;
+      if (product.category === 'footwear' && preferences.shoeSize && product.sizes && !JSON.parse(product.sizes).includes(preferences.shoeSize)) return false;
+      if (product.category === 'personal-care' && preferences.personalCare && product.brand && !preferences.personalCare.toLowerCase().includes(product.brand.toLowerCase())) return false;
+      return true;
     });
-    return;
+    filtered.forEach(p => { if (p.sizes) p.sizes = JSON.parse(p.sizes); });
+    res.json(filtered);
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
   }
-  
-  // Verify the profile belongs to the user
-  db.get('SELECT * FROM profiles WHERE userId = ? AND id = ?', [userId, profile_id], (err, profile) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    if (!profile) return res.status(404).json({ message: 'Profile not found' });
-    const preferences = JSON.parse(profile.preferences);
-    db.all('SELECT * FROM products', [], (err, products) => {
-      if (err) return res.status(500).json({ message: 'DB error' });
-      // Filter logic: gender, size, personal care
-      const filtered = products.filter(product => {
-        if (product.gender !== 'Unisex' && product.gender !== profile.gender) return false;
-        if (product.category === 'clothing' && preferences.shirtSize && product.sizes && !JSON.parse(product.sizes).includes(preferences.shirtSize)) return false;
-        if (product.category === 'footwear' && preferences.shoeSize && product.sizes && !JSON.parse(product.sizes).includes(preferences.shoeSize)) return false;
-        if (product.category === 'personal-care' && preferences.personalCare && product.brand && !preferences.personalCare.toLowerCase().includes(product.brand.toLowerCase())) return false;
-        return true;
-      });
-      // Parse sizes for each product
-      filtered.forEach(p => { if (p.sizes) p.sizes = JSON.parse(p.sizes); });
-      res.json(filtered);
-    });
-  });
 });
 
 // --- CART ENDPOINTS ---
 // Get all cart items for the user
-app.get('/cart', authenticateToken, (req, res) => {
+app.get('/cart', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
-  db.all('SELECT * FROM cart WHERE userId = ?', [userId], (err, rows) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
+  try {
+    const { rows } = await pool.query('SELECT * FROM cart WHERE userId = $1', [userId]);
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
 // Add a product to the cart (or update quantity if already exists)
-app.post('/cart', authenticateToken, (req, res) => {
+app.post('/cart', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
   const { productId, quantity } = req.body;
   if (!productId || !quantity) return res.status(400).json({ message: 'Product and quantity required' });
-  db.get('SELECT * FROM cart WHERE userId = ? AND productId = ?', [userId, productId], (err, row) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    if (row) {
-      // Update quantity
-      db.run('UPDATE cart SET quantity = quantity + ? WHERE id = ?', [quantity, row.id], function(err) {
-        if (err) return res.status(500).json({ message: 'DB error' });
-        db.get('SELECT * FROM cart WHERE id = ?', [row.id], (err, updatedRow) => {
-          res.json(updatedRow);
-        });
-      });
+  try {
+    const { rows } = await pool.query('SELECT * FROM cart WHERE userId = $1 AND productId = $2', [userId, productId]);
+    if (rows[0]) {
+      await pool.query('UPDATE cart SET quantity = quantity + $1 WHERE id = $2', [quantity, rows[0].id]);
+      const { rows: updatedRows } = await pool.query('SELECT * FROM cart WHERE id = $1', [rows[0].id]);
+      res.json(updatedRows[0]);
     } else {
       const id = String(Date.now());
-      db.run('INSERT INTO cart (id, userId, productId, quantity) VALUES (?, ?, ?, ?)', [id, userId, productId, quantity], function(err) {
-        if (err) return res.status(500).json({ message: 'DB error' });
-        db.get('SELECT * FROM cart WHERE id = ?', [id], (err, newRow) => {
-          res.status(201).json(newRow);
-        });
-      });
+      await pool.query('INSERT INTO cart (id, userId, productId, quantity) VALUES ($1, $2, $3, $4)', [id, userId, productId, quantity]);
+      const { rows: newRows } = await pool.query('SELECT * FROM cart WHERE id = $1', [id]);
+      res.status(201).json(newRows[0]);
     }
-  });
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
 // Remove a product from the cart by cart item id
-app.delete('/cart/:id', authenticateToken, (req, res) => {
+app.delete('/cart/:id', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
-  db.run('DELETE FROM cart WHERE userId = ? AND id = ?', [userId, req.params.id], function(err) {
-    if (err) return res.status(500).json({ message: 'DB error' });
+  try {
+    await pool.query('DELETE FROM cart WHERE userId = $1 AND id = $2', [userId, req.params.id]);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
 // Clear the cart for the user
-app.delete('/cart', authenticateToken, (req, res) => {
+app.delete('/cart', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
-  db.run('DELETE FROM cart WHERE userId = ?', [userId], function(err) {
-    if (err) return res.status(500).json({ message: 'DB error' });
+  try {
+    await pool.query('DELETE FROM cart WHERE userId = $1', [userId]);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ message: 'DB error' });
+  }
 });
 
 // Start server
