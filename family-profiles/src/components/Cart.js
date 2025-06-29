@@ -55,7 +55,7 @@ const Cart = ({ authToken }) => {
   const getProduct = (productId) => products.find(p => p.id === cartItems.find(ci => ci.productId === productId)?.productId);
 
   const cartWithDetails = cartItems.map(item => {
-    const product = products.find(p => p.id === item.productId);
+    const product = products.find(p => String(p.id) === String(item.productId));
     return product ? { ...item, product } : null;
   }).filter(Boolean);
 
