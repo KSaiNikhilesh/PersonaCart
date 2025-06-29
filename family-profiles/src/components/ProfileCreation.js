@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
 
 const ageGroups = [
   { label: 'Child (0-12)', value: 'Child' },
@@ -36,9 +37,12 @@ const ProfileCreation = ({ authToken }) => {
 
   const fetchProfiles = async () => {
     try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('User not authenticated');
+      const token = await user.getIdToken();
       const response = await fetch(`${API_URL}/profiles`, {
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -84,6 +88,9 @@ const ProfileCreation = ({ authToken }) => {
     }
 
     try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('User not authenticated');
+      const token = await user.getIdToken();
       const url = editingProfile 
         ? `${API_URL}/profiles/${editingProfile.id}`
         : `${API_URL}/profiles`;
@@ -93,7 +100,7 @@ const ProfileCreation = ({ authToken }) => {
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
@@ -131,10 +138,13 @@ const ProfileCreation = ({ authToken }) => {
     }
 
     try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('User not authenticated');
+      const token = await user.getIdToken();
       const response = await fetch(`${API_URL}/profiles/${profileId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
