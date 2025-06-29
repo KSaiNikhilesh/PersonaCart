@@ -92,7 +92,6 @@ family-profiles/
   ├── src/              # React frontend
   ├── server/           # Node.js + Express backend
   ├── package.json      # Frontend dependencies
-  └── README.md         # Project documentation
 ```
 
 ## Contribution
