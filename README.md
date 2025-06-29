@@ -91,7 +91,7 @@ family-profiles/
   ├── public/           # Static assets
   ├── src/              # React frontend
   ├── server/           # Node.js + Express backend
-  ├── package.json      # Frontend dependencies
+  └──package.json      # Frontend dependencies
 ```
 
 ## Contribution
