@@ -1,70 +1,102 @@
-# Getting Started with Create React App
+# PersonaCart
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+PersonaCart is a modern, family-oriented e-commerce MVP inspired by OTT profile systems. Each family member can have a personalized profile with preferences (sizes, personal care, etc.), making shopping easier and more tailored for everyone.
 
-## Available Scripts
+## Features
+- **Family Profiles:** Create and manage individual profiles for each family member.
+- **Personalized Product Recommendations:** Products are filtered and recommended based on active profile preferences.
+- **Profile-Based Cart:** Add products to cart per user profile.
+- **Secure Authentication:** Login with Firebase Authentication (email/password & Google).
+- **Modern UI:** Responsive React frontend with Tailwind CSS, dark/light mode, and glassmorphism design.
+- **Persistent Backend:** Node.js + Express backend with PostgreSQL (via Supabase) for data storage.
 
-In the project directory, you can run:
+## Tech Stack
+- **Frontend:** React, Tailwind CSS
+- **Backend:** Node.js, Express
+- **Database:** PostgreSQL (Supabase)
+- **Authentication:** Firebase Authentication
+- **Deployment:** Vercel (frontend), Render (backend)
 
-### `npm start`
+## Getting Started
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Prerequisites
+- Node.js (v18+ recommended)
+- npm or yarn
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 1. Clone the Repository
+```bash
+git clone https://github.com/KSaiNikhilesh/PersonaCart.git
+cd PersonaCart/sparkathon/family-profiles
+```
 
-### `npm test`
+### 2. Setup Environment Variables
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+#### Frontend (`/src/.env`)
+```
+REACT_APP_API_URL=<your-backend-url>
+REACT_APP_FIREBASE_API_KEY=...
+REACT_APP_FIREBASE_AUTH_DOMAIN=...
+REACT_APP_FIREBASE_PROJECT_ID=...
+REACT_APP_FIREBASE_STORAGE_BUCKET=...
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=...
+REACT_APP_FIREBASE_APP_ID=...
+```
 
-### `npm run build`
+#### Backend (`/server/.env`)
+```
+DATABASE_URL=<your-supabase-postgres-connection-string>
+FIREBASE_TYPE=...
+FIREBASE_PROJECT_ID=...
+FIREBASE_PRIVATE_KEY_ID=...
+FIREBASE_PRIVATE_KEY=...
+FIREBASE_CLIENT_EMAIL=...
+FIREBASE_CLIENT_ID=...
+FIREBASE_AUTH_URI=...
+FIREBASE_TOKEN_URI=...
+FIREBASE_AUTH_PROVIDER_X509_CERT_URL=...
+FIREBASE_CLIENT_X509_CERT_URL=...
+FIREBASE_UNIVERSE_DOMAIN=...
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 3. Install Dependencies
+#### Frontend
+```bash
+npm install
+```
+#### Backend
+```bash
+cd server
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 4. Run Locally
+#### Backend
+```bash
+cd server
+npm start
+```
+#### Frontend
+```bash
+cd ..
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 5. Deployment
+- **Frontend:** Deploy to Vercel. Set environment variables in the Vercel dashboard.
+- **Backend:** Deploy to Render. Set environment variables in the Render dashboard.
 
-### `npm run eject`
+## Folder Structure
+```
+family-profiles/
+  ├── public/           # Static assets
+  ├── src/              # React frontend
+  ├── server/           # Node.js + Express backend
+  ├── package.json      # Frontend dependencies
+  └── README.md         # Project documentation
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Contribution
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## License
+[MIT](../LICENSE)
