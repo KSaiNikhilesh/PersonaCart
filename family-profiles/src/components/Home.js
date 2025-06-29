@@ -224,7 +224,7 @@ const Home = ({ authToken }) => {
               Technology Stack
             </h3>
             <p className="text-blue-700 dark:text-blue-300 text-center leading-relaxed">
-              Built with React, Tailwind CSS, Node.js, Express, SQLite, and Firebase Authentication. 
+              Built with React, Tailwind CSS, Node.js, Express, PostgreSQL (Supabase), and Firebase Authentication. 
               Features a modern, responsive design with dark mode support and real-time data management.
             </p>
           </div>
